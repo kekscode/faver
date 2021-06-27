@@ -18,7 +18,7 @@ import (
 func main() {
 	flag.Parse()
 	if flag.NArg() == 0 {
-		flag.Usage()
+		fmt.Printf("Please provide valid HTTP URLs as positional arguments\n")
 		os.Exit(1)
 	}
 
