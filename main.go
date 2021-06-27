@@ -67,7 +67,7 @@ func main() {
 
 }
 
-// FetchFavicon discovers favicons, downloads them and returns their data
+// FetchFavicon fetches favicon data
 func FetchFavicons(url string) (icons [][]byte, err error) {
 	iconsURL, err := findFavicons(url)
 	if err != nil {
@@ -89,7 +89,7 @@ func FetchFavicons(url string) (icons [][]byte, err error) {
 
 // Go to loc, follow redirects, download html,
 // parse body for <link rel="icon" href="path-to-icon">
-// return path to icon
+// and return all paths to referenced favicons
 func findFavicons(loc string) ([]string, error) {
 	resp, err := http.Get(loc)
 	if err != nil {
@@ -119,8 +119,7 @@ func findFavicons(loc string) ([]string, error) {
 	var favicons []string
 	for _, ico := range icoHrefs {
 		if strings.HasPrefix(ico, "/") {
-			// Relative path
-			// TODO: Build a full qualified path
+			// Relative path found, build a full qualified path
 			u, err := url.Parse(
 				resp.Request.URL.Scheme + "://" +
 					resp.Request.URL.Host +
