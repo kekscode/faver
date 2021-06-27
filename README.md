@@ -7,6 +7,7 @@ Install:
     $> go install github.com/kekscode/faver
 
 or
+
     $> go build .
 
 Usage:
