@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -90,6 +89,7 @@ func FetchFavicons(url string) (icons [][]byte, err error) {
 // Go to loc, follow redirects, download html,
 // parse body for <link rel="icon" href="path-to-icon">
 // and return all paths to referenced favicons
+// Also: blindly try favicon.ico in the site root
 func findFavicons(loc string) ([]string, error) {
 	resp, err := http.Get(loc)
 	if err != nil {
@@ -110,11 +110,10 @@ func findFavicons(loc string) ([]string, error) {
 		href, found = s.Attr("href")
 
 		icoHrefs = append(icoHrefs, href)
+		if !found {
+			log.Println("cannot find a favicon URL in HTML body")
+		}
 	})
-
-	if !found {
-		return nil, errors.New("cannot find a favicon URL in HTML body")
-	}
 
 	var favicons []string
 	for _, ico := range icoHrefs {
@@ -132,6 +131,20 @@ func findFavicons(loc string) ([]string, error) {
 			favicons = append(favicons, u.String())
 		}
 	}
+
+	// Last resort: Try favicon.ico in document root
+	if len(favicons) == 0 {
+		docroot := loc + "/favicon.ico"
+		resp, err := http.Get(docroot)
+		if err != nil {
+			log.Fatalf("Cannot find %v\n", err)
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		favicons = append(favicons, docroot)
+	}
+
 	return favicons, nil
 }
 
