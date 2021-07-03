@@ -18,6 +18,10 @@ Example:
 
      $> faver https://www.gitlab.com https://www.test.de
 
-Known issues:
+Piping with STDIN is also supported:
 
-Only one way to detect favicon links is supported right now which does not work with every website.
+    $> cat urls.txt | ./faver
+
+Every target in `urls.txt` or STDIN in general must be a single line with `\n`
+as seperator.
+

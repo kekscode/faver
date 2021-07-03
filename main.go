@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"io"
@@ -16,12 +17,23 @@ import (
 
 func main() {
 	flag.Parse()
-	if flag.NArg() == 0 {
-		fmt.Printf("Please provide valid HTTP URLs as positional arguments\n")
-		os.Exit(1)
+
+	// read program input
+	var targets []string
+	if flag.NArg() == 0 { // from stdin/pipe
+		fmt.Println("Reading from stdin")
+
+		s := bufio.NewScanner(os.Stdin)
+		for s.Scan() {
+			log.Println("line", s.Text())
+			targets = append(targets, s.Text())
+		}
+	} else { // from argument
+		fmt.Println("Reading positional arguments")
+		targets = flag.Args()
 	}
 
-	for _, arg := range flag.Args() {
+	for _, arg := range targets {
 		// Find and fetch favicon:
 		favicons, err := FetchFavicons(arg)
 		if err != nil {
