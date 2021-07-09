@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -38,19 +39,37 @@ func (f *Fetcher) FetchFavicons(url string) (icons [][]byte, err error) {
 	return iconsData, nil
 }
 
-// findFavicons tries to find favicon URLs for a given location
-func (f *Fetcher) findFavicons(loc string) ([]string, error) {
-	// Go to loc, follow redirects, download html,
-	// parse body for <link rel="icon" href="path-to-icon">
-	// and return all paths to referenced favicons
-	// Also: blindly try favicon.ico in the site root
-	resp, err := http.Get(loc)
+// getHTML downloads raw HTML and request data for an URL
+func (f *Fetcher) getHTML(url string) (body io.Reader, response *http.Response, err error) {
+	resp, err := http.Get(url)
 	if err != nil {
-		return []string{""}, err
+		return nil, resp, err
 	}
 	defer resp.Body.Close()
 
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	html := io.NopCloser(bytes.NewBuffer(b))
+
+	return html, resp, nil
+}
+
+// findFavicons tries to find favicon URLs for a given location
+func (f *Fetcher) findFavicons(loc string) (icons []string, err error) {
+	// Go to loc, follow redirects, download html,
+	// parse body for <link rel="icon" href="path-to-icon">
+	// and return all paths to referenced favicons
+	//
+	// Also: blindly try favicon.ico in the site root as fallback
+
+	html, resp, err := f.getHTML(loc)
+	if err != nil {
+		log.Fatalf("cannot get HTML: %v", err)
+	}
+	doc, err := goquery.NewDocumentFromReader(html)
 	if err != nil {
 		return []string{""}, err
 	}
@@ -102,7 +121,7 @@ func (f *Fetcher) findFavicons(loc string) ([]string, error) {
 }
 
 // getFavicon downloads a favicon
-func (f *Fetcher) getFavicon(url string) (icon []byte, err error) {
+func (f *Fetcher) getFavicon(url string) (icons []byte, err error) {
 	if len(url) >= 7 {
 		resp, err := http.Get(url)
 		if err != nil {
@@ -110,7 +129,7 @@ func (f *Fetcher) getFavicon(url string) (icon []byte, err error) {
 		}
 		defer resp.Body.Close()
 
-		icon, err = io.ReadAll(resp.Body)
+		icon, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
