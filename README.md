@@ -8,7 +8,7 @@ Install:
 
 or
 
-    $> go build .
+    $> cd cmd && go build -o faver
 
 Usage:
 
