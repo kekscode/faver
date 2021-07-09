@@ -1,86 +1,26 @@
-package main
+package internal
 
 import (
-	"bufio"
-	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-func main() {
-	flag.Parse()
+type Fetcher struct{}
 
-	// read program input
-	var targets []string
-	if flag.NArg() == 0 { // from stdin/pipe
-		fmt.Println("Reading from stdin")
-
-		s := bufio.NewScanner(os.Stdin)
-		for s.Scan() {
-			log.Println("line", s.Text())
-			targets = append(targets, s.Text())
-		}
-	} else { // from argument
-		fmt.Println("Reading positional arguments")
-		targets = flag.Args()
-	}
-
-	for _, arg := range targets {
-		// Find and fetch favicon:
-		favicons, err := FetchFavicons(arg)
-		if err != nil {
-			log.Fatalf("error: %v", err)
-		}
-
-		if len(favicons) == 0 {
-			log.Fatalf("error: no favicons for %s found", arg)
-			break
-		}
-
-		for idxIco, icon := range favicons {
-			u, err := url.Parse(
-				arg,
-			)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			// Save to disk:
-			curtime := time.Now()
-			fname := fmt.Sprintf("%s-%s-%d.ico",
-				fmt.Sprintf(
-					"%d%02d%02d%02d%02d%02d",
-					curtime.Year(), curtime.Month(), curtime.Day(),
-					curtime.Hour(), curtime.Minute(), curtime.Second(),
-				),
-				u.Host,
-				idxIco)
-			out, err := os.Create(fname)
-			if err != nil {
-				log.Fatalf("error: %v", err)
-			}
-			defer out.Close()
-
-			_, err = out.Write(icon)
-			if err != nil {
-				log.Fatalf("error: %v", err)
-			}
-		}
-	}
-
+func New() *Fetcher {
+	f := Fetcher{}
+	return &f
 }
 
-// FetchFavicon fetches favicon data
-func FetchFavicons(url string) (icons [][]byte, err error) {
-	iconsURL, err := findFavicons(url)
+// FetchFavicons fetches favicon data for a given url
+func (f *Fetcher) FetchFavicons(url string) (icons [][]byte, err error) {
+	iconsURL, err := f.findFavicons(url)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +28,7 @@ func FetchFavicons(url string) (icons [][]byte, err error) {
 	// download favicons
 	var iconsData [][]byte
 	for _, ico := range iconsURL {
-		icoData, err := getFavicon(ico)
+		icoData, err := f.getFavicon(ico)
 		if err != nil {
 			return nil, err
 		}
@@ -98,11 +38,12 @@ func FetchFavicons(url string) (icons [][]byte, err error) {
 	return iconsData, nil
 }
 
-// Go to loc, follow redirects, download html,
-// parse body for <link rel="icon" href="path-to-icon">
-// and return all paths to referenced favicons
-// Also: blindly try favicon.ico in the site root
-func findFavicons(loc string) ([]string, error) {
+// findFavicons tries to find favicon URLs for a given location
+func (f *Fetcher) findFavicons(loc string) ([]string, error) {
+	// Go to loc, follow redirects, download html,
+	// parse body for <link rel="icon" href="path-to-icon">
+	// and return all paths to referenced favicons
+	// Also: blindly try favicon.ico in the site root
 	resp, err := http.Get(loc)
 	if err != nil {
 		return []string{""}, err
@@ -160,7 +101,8 @@ func findFavicons(loc string) ([]string, error) {
 	return favicons, nil
 }
 
-func getFavicon(url string) (icon []byte, err error) {
+// getFavicon downloads a favicon
+func (f *Fetcher) getFavicon(url string) (icon []byte, err error) {
 	if len(url) >= 7 {
 		resp, err := http.Get(url)
 		if err != nil {

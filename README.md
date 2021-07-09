@@ -24,4 +24,3 @@ Piping with STDIN is also supported:
 
 Every target in `urls.txt` or STDIN in general must be a single line with `\n`
 as seperator.
-
