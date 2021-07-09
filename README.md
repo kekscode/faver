@@ -2,11 +2,7 @@
 
 A download tool for favicons
 
-Install:
-
-    $> go install github.com/kekscode/faver
-
-or
+Build:
 
     $> cd cmd && go build -o faver
 
