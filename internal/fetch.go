@@ -20,41 +20,40 @@ func New() *Fetcher {
 }
 
 // FetchFavicons fetches favicon data for a given url
-func (f *Fetcher) FetchFavicons(url string) (icons [][]byte, err error) {
+func (f *Fetcher) FetchFavicons(url string) (data [][]byte, err error) {
 	iconsURL, err := f.findFavicons(url)
 	if err != nil {
 		return nil, err
 	}
 
 	// download favicons
-	var iconsData [][]byte
 	for _, ico := range iconsURL {
 		icoData, err := f.getFavicon(ico)
 		if err != nil {
 			return nil, err
 		}
-		iconsData = append(iconsData, icoData)
+		data = append(data, icoData)
 	}
 
-	return iconsData, nil
+	return data, nil
 }
 
 // getHTML downloads raw HTML and request data for an URL
 func (f *Fetcher) getHTML(url string) (body io.Reader, response *http.Response, err error) {
-	resp, err := http.Get(url)
+	response, err = http.Get(url)
 	if err != nil {
-		return nil, resp, err
+		return nil, response, err
 	}
-	defer resp.Body.Close()
+	defer response.Body.Close()
 
-	b, err := io.ReadAll(resp.Body)
+	b, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, resp, err
+		return nil, response, err
 	}
 
 	html := io.NopCloser(bytes.NewBuffer(b))
 
-	return html, resp, nil
+	return html, response, nil
 }
 
 // findFavicons tries to find favicon URLs for a given location
@@ -87,7 +86,6 @@ func (f *Fetcher) findFavicons(loc string) (icons []string, err error) {
 		}
 	})
 
-	var favicons []string
 	for _, ico := range icoHrefs {
 		if strings.HasPrefix(ico, "/") {
 			// Relative path found, build a full qualified path
@@ -100,12 +98,12 @@ func (f *Fetcher) findFavicons(loc string) (icons []string, err error) {
 			if err != nil {
 				return nil, err
 			}
-			favicons = append(favicons, u.String())
+			icons = append(icons, u.String())
 		}
 	}
 
 	// Last resort: Try favicon.ico in document root
-	if len(favicons) == 0 {
+	if len(icons) == 0 {
 		docroot := loc + "/favicon.ico"
 		resp, err := http.Get(docroot)
 		if err != nil {
@@ -114,14 +112,14 @@ func (f *Fetcher) findFavicons(loc string) (icons []string, err error) {
 		}
 		defer resp.Body.Close()
 
-		favicons = append(favicons, docroot)
+		icons = append(icons, docroot)
 	}
 
-	return favicons, nil
+	return icons, nil
 }
 
 // getFavicon downloads a favicon
-func (f *Fetcher) getFavicon(url string) (icons []byte, err error) {
+func (f *Fetcher) getFavicon(url string) (icon []byte, err error) {
 	if len(url) >= 7 {
 		resp, err := http.Get(url)
 		if err != nil {
@@ -129,7 +127,7 @@ func (f *Fetcher) getFavicon(url string) (icons []byte, err error) {
 		}
 		defer resp.Body.Close()
 
-		icon, err := io.ReadAll(resp.Body)
+		icon, err = io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
