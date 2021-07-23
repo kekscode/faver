@@ -1,3 +1,6 @@
+/*
+Internal Fetcher object
+*/
 package internal
 
 import (
