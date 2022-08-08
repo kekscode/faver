@@ -95,7 +95,7 @@ func (f *Fetcher) findFavicons(loc string) (icons []string, err error) {
 			log.Println("cannot find a favicon URL in HTML body 1/2")
 		}
 	})
-	doc.Find("head link[rel=shortcut icon]").Each(func(i int, s *goquery.Selection) {
+	doc.Find("head link[rel=shortcut.icon]").Each(func(i int, s *goquery.Selection) {
 		href := ""
 		href, found = s.Attr("href")
 
