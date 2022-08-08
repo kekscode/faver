@@ -23,10 +23,6 @@ func New() *Fetcher {
 	return &f
 }
 
-customTransport := http.DefaultTransport.(*http.Transport).Clone()
-customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-client := &http.Client{Transport: customTransport}
-
 // FetchFavicons fetches favicon data for a given url
 func (f *Fetcher) FetchFavicons(url string) (data [][]byte, err error) {
 	iconsURL, err := f.findFavicons(url)
@@ -48,6 +44,9 @@ func (f *Fetcher) FetchFavicons(url string) (data [][]byte, err error) {
 
 // getHTML downloads raw HTML and request data for an URL
 func (f *Fetcher) getHTML(url string) (body io.Reader, response *http.Response, err error) {
+	customTransport := http.DefaultTransport.(*http.Transport).Clone()
+	customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	client := &http.Client{Transport: customTransport}
 	response, err = client.Get(url)
 	if err != nil {
 		return nil, response, err
@@ -66,6 +65,9 @@ func (f *Fetcher) getHTML(url string) (body io.Reader, response *http.Response, 
 
 // findFavicons tries to find favicon URLs for a given location
 func (f *Fetcher) findFavicons(loc string) (icons []string, err error) {
+	customTransport := http.DefaultTransport.(*http.Transport).Clone()
+	customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	client := &http.Client{Transport: customTransport}
 	// Go to loc, follow redirects, download html,
 	// parse body for <link rel="icon" href="path-to-icon">
 	// and return all paths to referenced favicons
@@ -128,6 +130,9 @@ func (f *Fetcher) findFavicons(loc string) (icons []string, err error) {
 
 // getFavicon downloads a favicon
 func (f *Fetcher) getFavicon(url string) (icon []byte, err error) {
+	customTransport := http.DefaultTransport.(*http.Transport).Clone()
+	customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	client := &http.Client{Transport: customTransport}
 	if len(url) >= 7 {
 		resp, err := client.Get(url)
 		if err != nil {
