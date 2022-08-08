@@ -1,4 +1,4 @@
-module github.com/kekscode/faver
+module github.com/cyn8/faver
 
 go 1.16
 

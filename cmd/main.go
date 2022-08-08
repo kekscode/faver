@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kekscode/faver/internal"
+	"github.com/cyn8/faver/internal"
 )
 
 func main() {
