@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"crypto/tls"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -43,7 +44,10 @@ func (f *Fetcher) FetchFavicons(url string) (data [][]byte, err error) {
 
 // getHTML downloads raw HTML and request data for an URL
 func (f *Fetcher) getHTML(url string) (body io.Reader, response *http.Response, err error) {
-	response, err = http.Get(url)
+	customTransport := http.DefaultTransport.(*http.Transport).Clone()
+	customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	client := &http.Client{Transport: customTransport}
+	response, err = client.Get(url)
 	if err != nil {
 		return nil, response, err
 	}
@@ -61,6 +65,9 @@ func (f *Fetcher) getHTML(url string) (body io.Reader, response *http.Response, 
 
 // findFavicons tries to find favicon URLs for a given location
 func (f *Fetcher) findFavicons(loc string) (icons []string, err error) {
+	customTransport := http.DefaultTransport.(*http.Transport).Clone()
+	customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	client := &http.Client{Transport: customTransport}
 	// Go to loc, follow redirects, download html,
 	// parse body for <link rel="icon" href="path-to-icon">
 	// and return all paths to referenced favicons
@@ -85,7 +92,16 @@ func (f *Fetcher) findFavicons(loc string) (icons []string, err error) {
 
 		icoHrefs = append(icoHrefs, href)
 		if !found {
-			log.Println("cannot find a favicon URL in HTML body")
+			log.Println("cannot find a favicon URL in HTML body 1/2")
+		}
+	})
+	doc.Find("head link[rel=shortcut.icon]").Each(func(i int, s *goquery.Selection) {
+		href := ""
+		href, found = s.Attr("href")
+
+		icoHrefs = append(icoHrefs, href)
+		if !found {
+			log.Println("cannot find a favicon URL in HTML body 2/2")
 		}
 	})
 
@@ -108,7 +124,7 @@ func (f *Fetcher) findFavicons(loc string) (icons []string, err error) {
 	// Last resort: Try favicon.ico in document root
 	if len(icons) == 0 {
 		docroot := loc + "/favicon.ico"
-		resp, err := http.Get(docroot)
+		resp, err := client.Get(docroot)
 		if err != nil {
 			log.Fatalf("Cannot find %v\n", err)
 			return nil, err
@@ -123,8 +139,11 @@ func (f *Fetcher) findFavicons(loc string) (icons []string, err error) {
 
 // getFavicon downloads a favicon
 func (f *Fetcher) getFavicon(url string) (icon []byte, err error) {
+	customTransport := http.DefaultTransport.(*http.Transport).Clone()
+	customTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	client := &http.Client{Transport: customTransport}
 	if len(url) >= 7 {
-		resp, err := http.Get(url)
+		resp, err := client.Get(url)
 		if err != nil {
 			return nil, err
 		}
